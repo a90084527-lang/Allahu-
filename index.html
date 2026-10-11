@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4d7f2e">
+<title>MiniHub · 지뢰찾기</title>
+<style>
+:root{--green:#4d7f2e;--green-dark:#3e6b25;--tile:#a4d64b;--tile-light:#addf55;--tile-dark:#9bce43;--open:#dfbd9b;--open-dark:#d7b28f;--ink:#263326;--line:#d8dfd0;--paper:#f5f7f1;--white:#fff;--blue:#1976d2;--num2:#388e3c;--num3:#d32f2f;--num4:#512da8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,"Noto Sans KR",system-ui,sans-serif}
+button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #326fba;outline-offset:2px}
+#app{min-height:100vh}
+.header{background:var(--green);color:#fff;padding:14px max(14px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:-.4px}.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:7px;background:#fff;color:var(--green);font-size:21px}
+.header-right{display:flex;align-items:center;gap:8px}.coin{font-weight:800;background:#3e6b25;padding:8px 11px;border-radius:6px;white-space:nowrap}
+.nav{display:flex;gap:7px;flex-wrap:wrap}.nav button{border:1px solid #ffffff65;background:transparent;color:white;border-radius:6px;padding:9px 12px;font-weight:700}.nav button.active,.nav button:hover{background:#fff;color:var(--green)}
+main{max-width:1000px;margin:0 auto;padding:18px 12px 36px}
+.view{display:none}.view.active{display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:9px;padding:16px;margin-bottom:14px}
+h1,h2,h3,p{margin-top:0}h1{font-size:clamp(24px,5vw,34px);margin-bottom:8px}h2{font-size:21px;margin-bottom:12px}p{line-height:1.55;color:#5e6958}
+.hero{background:#fff;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,5vw,44px);margin-bottom:14px}
+.hero .tag{font-size:12px;font-weight:800;letter-spacing:1.2px;color:var(--green);margin-bottom:12px}
+.btn{border:0;border-radius:7px;padding:11px 15px;font-weight:800;background:#edf1e8;color:#34452c}.btn.primary{background:var(--green);color:white}.btn.primary:hover{background:var(--green-dark)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.spacer{flex:1}
+.difficulty{display:flex;gap:6px;flex-wrap:wrap}.difficulty button{background:#f1f3ed;border:1px solid #d5ddce;color:#4a5942;border-radius:6px;padding:8px 11px;font-weight:700}.difficulty button.active{background:var(--green);border-color:var(--green);color:#fff}
+.game-panel{background:#fff;border:1px solid var(--line);border-radius:9px;padding:12px}
+.gamebar{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-bottom:12px;background:#f0f4e9;padding:10px;border-radius:6px}
+.stat{font-weight:800;white-space:nowrap}.stat strong{font-variant-numeric:tabular-nums}
+.board-wrap{overflow:auto;max-width:100%;padding:2px 1px 9px;overscroll-behavior-x:contain}
+.board{display:grid;gap:0;width:max-content;margin:0 auto;border:2px solid #92bd3c;touch-action:manipulation}
+.cell{width:clamp(27px,7.2vw,38px);height:clamp(27px,7.2vw,38px);padding:0;border:0;border-right:1px solid #95c541;border-bottom:1px solid #95c541;background:var(--tile);box-shadow:inset 1px 1px #b7e465,inset -1px -1px #91bd3d;display:grid;place-items:center;color:#263326;font-size:clamp(15px,4vw,22px);font-weight:800;line-height:1;user-select:none;-webkit-user-select:none}
+.cell:nth-child(odd):not(.open):not(.flag):not(.mine){background:var(--tile-light)}
+.board.yellow-tiles .cell:not(.open):not(.flag){background:#f4d64e!important;box-shadow:inset 1px 1px #ffeb8a,inset -1px -1px #d2ae25;border-color:#d9b82b}.board.red-tiles .cell:not(.open):not(.flag){background:#ed7770!important;box-shadow:inset 1px 1px #ffaaa4,inset -1px -1px #c6534c;border-color:#d66a62}.cell.open{background:var(--open);box-shadow:inset 0 0 0 1px var(--open-dark);border-color:var(--open-dark)}
+.cell.flag{font-size:clamp(15px,4vw,21px)}
+.cell.mine{background:#ef8c7e}
+.cell.exploded{background:#e53935!important}
+.cell.n1{color:#1976d2}.cell.n2{color:#388e3c}.cell.n3{color:#d32f2f}.cell.n4{color:#512da8}.cell.n5{color:#795548}.cell.n6{color:#00838f}.cell.n7{color:#333}.cell.n8{color:#777}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tools .btn{flex:1;min-width:110px}.tools .selected{background:#3e6b25;color:#fff}
+.message{padding:11px 12px;background:#f0f4e9;border-radius:6px;margin-top:12px;line-height:1.5;font-weight:600}.message.win{background:#e3f3d4;color:#2d6722}.message.lose{background:#ffebe7;color:#a5281d}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr));gap:10px}
+.item{border:1px solid var(--line);border-radius:8px;padding:13px;background:#fff;display:flex;flex-direction:column;gap:12px}
+.item-top{display:flex;gap:10px;align-items:flex-start}.item-icon{width:42px;height:42px;flex:0 0 42px;border-radius:7px;background:#f0f4e9;display:grid;place-items:center;font-size:25px}
+.item h3{font-size:16px;margin:1px 0 5px}.item p{font-size:13px;margin:0;line-height:1.45}.item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}.price{font-weight:800;color:#89651d;font-size:14px}.buy{border:0;border-radius:6px;background:var(--green);color:white;padding:8px 11px;font-weight:800}.buy:disabled{background:#dce3d5;color:#65715e}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.slot{border:1px dashed #b8c5ad;border-radius:7px;min-height:66px;padding:9px;background:#fafbf8;text-align:left;color:#34452c}.slot strong{display:block;font-size:13px;margin-bottom:4px}.slot span{font-size:12px;color:#687460}.slot.filled{border-style:solid;border-color:#8eb16c;background:#edf5e5}
+select{border:1px solid #cbd4c2;border-radius:6px;padding:9px;background:white;color:var(--ink)}
+.small{font-size:12px;color:#697562}.hidden{display:none!important}
+@media(min-width:700px){.cell{width:34px;height:34px;font-size:19px}.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:14px;align-items:start}}
+@media(max-width:430px){.header{padding:11px}.brand{font-size:18px}.nav button{padding:8px 9px;font-size:13px}.game-panel{padding:8px}.cell{width:clamp(27px,8.3vw,34px);height:clamp(27px,8.3vw,34px)}.slots{gap:5px}.slot{padding:7px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header class="header">
+  <div class="brand"><span class="brand-mark">✹</span><span>MiniHub</span></div>
+  <div class="header-right"><div class="coin">🪙 <span id="coinCount">0</span></div><nav class="nav"><button data-view="home" class="active">홈</button><button data-view="play">플레이</button><button data-view="shop">상점</button><button data-view="profile">프로필</button></nav></div>
+</header>
+<main>
+<section id="homeView" class="view active">
+  <div class="hero"><div class="tag">MINIHUB · MINI GAMES</div><h1>가볍게 즐기는 미니게임</h1><p>지금은 클래식 지뢰찾기를 플레이할 수 있어요. 게임을 클리어하고 코인을 모아 깃발 스킨과 스킬을 모아 보세요.</p><button class="btn primary" id="homePlay">▶ 플레이</button> <button class="btn" id="homeShop">상점 보기</button></div>
+  <div class="panel"><h2>내 진행 상황</h2><div class="row"><span>🏆 클리어 <strong id="wins">0</strong>회</span><span class="spacer"></span><span>💣 플레이 <strong id="games">0</strong>회</span></div><p class="small" style="margin:9px 0 0">진행 상황은 이 브라우저에 자동 저장됩니다.</p></div>
+</section>
+<section id="playView" class="view">
+  <div class="panel"><div class="row"><h2 style="margin:0">지뢰찾기</h2><span class="spacer"></span><div class="difficulty" id="difficulty">
+    <button data-diff="easy" class="active">쉬움</button><button data-diff="medium">중간</button><button data-diff="hard">어려움</button><button data-diff="expert">매우 어려움</button>
+  </div></div></div>
+  <div class="game-layout">
+  <div class="game-panel">
+    <div class="gamebar"><span class="stat">💣 <strong id="mineCounter">010</strong></span><span class="stat">🚩 <strong id="flagCounter">000</strong></span><span class="stat">⏱ <strong id="timer">000</strong></span><button class="btn" id="newGame">🙂 새 게임</button></div>
+    <div class="board-wrap"><div class="board" id="board" aria-label="지뢰찾기 게임판"></div></div>
+    <div class="tools"><button id="digMode" class="btn primary selected">⛏ 땅파기</button><button id="flagMode" class="btn">🚩 깃발</button><button id="finderBtn" class="btn">🔎 파인더 <span id="finderLeft"></span></button><button id="catchBtn" class="btn">🧲 캐치 사용</button></div>
+    <div id="gameMessage" class="message" aria-live="polite">칸을 눌러 시작하세요. 첫 클릭은 안전해요.</div>
+  </div>
+  <aside class="panel"><h2>게임 안내</h2><p>숫자는 주변 8칸에 있는 지뢰 수예요. 숫자를 참고해 지뢰를 피하고 모든 안전한 칸을 여세요.</p><p>📱 휴대폰에서는 <b>땅파기</b> 또는 <b>깃발</b> 모드를 선택한 뒤 칸을 누르세요.</p><p>🖥️ PC에서는 오른쪽 클릭으로도 깃발을 표시할 수 있어요.</p><div class="small">클리어 보상: 쉬움 2 · 중간 5 · 어려움 10 · 매우 어려움 35 코인</div></aside>
+  </div>
+</section>
+<section id="profileView" class="view">
+ <div class="panel"><h1>프로필</h1><p>플레이하며 경험치를 얻고 최대 레벨 100까지 성장하세요.</p>
+ <div class="row"><strong id="profileLevel">레벨 1</strong><span class="spacer"></span><strong id="profileXP">0 / 100 XP</strong></div>
+ <div style="height:12px;background:#e5eadf;border-radius:8px;overflow:hidden;margin:10px 0 18px"><div id="xpBar" style="height:100%;width:0;background:#4d7f2e"></div></div>
+ <div class="row"><span>🏆 클리어 <b id="profileWins">0</b></span><span>🎮 플레이 <b id="profileGames">0</b></span><span>🪙 코인 <b id="profileCoins">0</b></span></div></div>
+ <div class="panel"><h2>레벨 보상</h2><div id="levelRewards"></div></div>
+</section>
+<section id="shopView" class="view">
+  <div class="panel"><h2>상점</h2><p>코인으로 깃발 스킨과 스킬을 구매하세요. 스킬은 아래 슬롯에 최대 3개까지 장착할 수 있어요.</p><div class="shopgrid" id="shopGrid"></div></div>
+  <div class="panel"><h2>스킬 장착</h2><p>슬롯을 누르면 장착한 스킬을 해제할 수 있어요.</p><div class="slots" id="skillSlots"></div><div id="skillControls" style="margin-top:8px"></div></div>
+  <div class="panel"><h2>깃발 스킨</h2><div class="row"><label for="skinSelect">사용할 깃발</label><select id="skinSelect"></select></div></div>
+</section>
+</main>
+</div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const DIFF={
+ easy:{label:'쉬움',rows:9,cols:9,mines:10,reward:2},
+ medium:{label:'중간',rows:16,cols:16,mines:28,reward:5},
+ hard:{label:'어려움',rows:16,cols:30,mines:70,reward:10},
+ expert:{label:'매우 어려움',rows:20,cols:30,mines:105,reward:35}
+};
+const ITEMS=[
+ {id:'pirate',type:'skin',name:'해적 깃발',icon:'🏴‍☠️',skin:'🏴‍☠️',price:25,desc:'깃발을 해적 깃발로 바꿉니다.'},
+ {id:'usa',type:'skin',name:'미국 깃발',icon:'🇺🇸',skin:'🇺🇸',price:25,desc:'깃발을 미국 국기로 바꿉니다.'},
+ {id:'white',type:'skin',name:'하얀 깃발',icon:'🏳️',skin:'🏳️',price:25,desc:'흰색 깃발 스킨입니다.'},
+ {id:'black',type:'skin',name:'검은 깃발',icon:'🏴',skin:'🏴',price:25,desc:'검은색 깃발 스킨입니다.'},
+ {id:'korea',type:'skin',name:'한국 깃발',icon:'🇰🇷',skin:'🇰🇷',price:1000,desc:'태극기 깃발 스킨입니다.'},
+ {id:'antarctica',type:'skin',name:'남극 깃발',icon:'🇦🇶',skin:'🇦🇶',price:5,desc:'남극 깃발 스킨입니다.'},
+ {id:'yellowtile',type:'tile',name:'노랑 타일 스킨',icon:'🟨',tile:'yellow',price:4,desc:'닫힌 타일을 선명한 노란색으로 바꿉니다.'},
+ {id:'timeattack',type:'skill',name:'타임어택',icon:'⏱️',price:100,desc:'패시브 스킬. 빨리 클리어할수록 최대 10 보너스 코인.'},
+ {id:'finder',type:'skill',name:'파인더',icon:'🔎',price:100,desc:'라운드마다 최대 3번, 아직 공개되지 않은 지뢰 하나를 찾아 표시합니다.'},
+ {id:'catch',type:'skill',name:'캐치',icon:'🧲',price:0,unlock:10,desc:'레벨 10 보상. 라운드당 1회: 지뢰를 누르면 그 지뢰와 가장 가까운 지뢰를 제거하고, 안전칸을 누르면 지뢰 하나를 무력화합니다.'},
+ {id:'bonus',type:'skill',name:'보너스',icon:'❤️',price:0,unlock:12,desc:'레벨 12 보상 패시브. 한 라운드에서 한 번 부활하고 지뢰 자리에 깃발을 놓습니다.'}
+];
+const defaults={coins:0,ownedSkins:['🚩'],skin:'🚩',ownedSkills:[],equipped:[],wins:0,games:0,xp:0,level:1,tileSkin:'green',sound:true};
+let state=loadState(),difficulty='easy',board=[],started=false,ended=false,flagMode=false,flags=0,seconds=0,timerId=null,finderUses=0,catchArmed=false,catchUsed=false,bonusUsed=false,exploded=-1,audioCtx=null;
+function loadState(){try{const d=JSON.parse(localStorage.getItem('minihub_state_v3')||'{}');return {...defaults,...d,ownedSkins:Array.isArray(d.ownedSkins)?d.ownedSkins:defaults.ownedSkins,ownedSkills:Array.isArray(d.ownedSkills)?d.ownedSkills:[],equipped:Array.isArray(d.equipped)?d.equipped:[],xp:Number(d.xp)||0,level:Number(d.level)||1,tileSkin:d.tileSkin||'green'}}catch(e){return {...defaults}}}
+function xpNeed(level){return Math.floor(80+level*level*12)}
+function addXP(amount){state.xp=(state.xp||0)+amount;while(state.level<100&&state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;grantLevelRewards()}if(state.level>=100){state.level=100;state.xp=0}}
+function grantLevelRewards(){const rewards={3:{type:'skin',value:'🇧🇩',name:'방글라데시 깃발'},5:{type:'tile',value:'red',name:'빨강 타일 스킨'},10:{type:'skill',value:'catch',name:'캐치 스킬'},12:{type:'skill',value:'bonus',name:'보너스 스킬'},15:{type:'skin',value:'🇪🇬',name:'이집트 깃발'}};const r=rewards[state.level];if(!r)return;if(r.type==='skin'&&!state.ownedSkins.includes(r.value))state.ownedSkins.push(r.value);if(r.type==='tile'){state.ownedSkills.push('tile_red');state.tileSkin='red';}if(r.type==='skill'&&!state.ownedSkills.includes(r.value))state.ownedSkills.push(r.value);toast('🎁 레벨 '+state.level+' 보상 획득: '+r.name)}
+function renderProfile(){const need=xpNeed(state.level);$('profileLevel').textContent='레벨 '+state.level;$('profileXP').textContent=(state.level>=100?'MAX':state.xp+' / '+need+' XP');$('xpBar').style.width=(state.level>=100?100:Math.min(100,state.xp/need*100))+'%';$('profileWins').textContent=state.wins;$('profileGames').textContent=state.games;$('profileCoins').textContent=state.coins;const rw=[['3','🇧🇩 방글라데시 깃발'],['5','🟥 빨강 타일 스킨'],['10','🧲 캐치 스킬'],['12','❤️ 보너스 스킬'],['15','🇪🇬 이집트 깃발']];$('levelRewards').innerHTML=rw.map(x=>'<div class="row" style="padding:10px 0;border-bottom:1px solid #e4e9df"><strong>레벨 '+x[0]+'</strong><span class="spacer"></span>'+x[1]+'</div>').join('')}
+function save(){try{localStorage.setItem('minihub_state_v3',JSON.stringify(state))}catch(e){}renderHeader();renderHome();renderShop();renderProfile()}
+function renderHeader(){$('coinCount').textContent=state.coins}
+function renderHome(){$('wins').textContent=state.wins;$('games').textContent=state.games}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(name+'View').classList.add('active');document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='shop')renderShop();if(name==='profile')renderProfile();if(name==='play'&&!board.length)newGame()}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+$('homePlay').addEventListener('click',()=>showView('play'));$('homeShop').addEventListener('click',()=>showView('shop'));
+function renderShop(){
+ const grid=$('shopGrid');grid.innerHTML='';
+ ITEMS.forEach(item=>{
+  const owned=item.type==='skin'?state.ownedSkins.includes(item.skin):item.type==='tile'?(state.tileSkin==='yellow'||state.tileSkin==='red'||state.ownedSkills.includes('tile_yellow')):state.ownedSkills.includes(item.id);
+  const card=document.createElement('article');card.className='item';
+  const top=document.createElement('div');top.className='item-top';
+  const icon=document.createElement('div');icon.className='item-icon';icon.textContent=item.icon;
+  const info=document.createElement('div');const title=document.createElement('h3');title.textContent=item.name;const desc=document.createElement('p');desc.textContent=item.desc;info.append(title,desc);top.append(icon,info);
+  const bottom=document.createElement('div');bottom.className='item-bottom';const price=document.createElement('span');price.className='price';price.textContent='🪙 '+item.price.toLocaleString('ko-KR')+' 코인';
+  const btn=document.createElement('button');btn.className='buy';btn.textContent=owned?'보유 중':'구매';btn.disabled=owned||state.coins<item.price;btn.addEventListener('click',()=>buyItem(item));bottom.append(price,btn);card.append(top,bottom);grid.append(card);
+ });
+ const slots=$('skillSlots');slots.innerHTML='';const controls=$('skillControls');controls.innerHTML='';
+ for(let i=0;i<3;i++){const id=state.equipped[i],item=ITEMS.find(x=>x.id===id);const b=document.createElement('button');b.className='slot'+(item?' filled':'');b.innerHTML='<strong>스킬 슬롯 '+(i+1)+'</strong><span></span>';b.querySelector('span').textContent=item?item.icon+' '+item.name+' · 눌러 해제':'비어 있음';b.addEventListener('click',()=>{if(item){state.equipped=state.equipped.filter(x=>x!==id);save()}else toast('보유한 스킬을 구매한 뒤 아래 스킬 목록에서 장착할 수 있어요.');});slots.append(b)}
+ // Add explicit equip controls for owned skills
+ state.ownedSkills.forEach(id=>{const item=ITEMS.find(x=>x.id===id);if(!item)return;const b=document.createElement('button');b.className='btn';b.style.margin='8px 8px 0 0';b.textContent=(state.equipped.includes(id)?'✓ 장착 해제: ':'＋ 장착: ')+item.name;b.addEventListener('click',()=>{if(state.equipped.includes(id))state.equipped=state.equipped.filter(x=>x!==id);else if(state.equipped.length<3)state.equipped.push(id);else{toast('스킬은 최대 3개까지 장착할 수 있어요.');return}save()});controls.append(b)});
+ const skin=$('skinSelect');skin.innerHTML='';const skins=[{name:'기본 깃발',skin:'🚩'},...ITEMS.filter(x=>x.type==='skin').map(x=>({name:x.name,skin:x.skin})),{name:'방글라데시 깃발',skin:'🇧🇩'},{name:'이집트 깃발',skin:'🇪🇬'}].filter(x=>state.ownedSkins.includes(x.skin));skins.forEach(x=>{const o=document.createElement('option');o.value=x.skin;o.textContent=x.name;skin.append(o)});skin.value=state.skin;
+}
+function buyItem(item){if(item.type==='skin'&&state.ownedSkins.includes(item.skin))return;if(item.type==='tile'&&(state.tileSkin==='yellow'||state.tileSkin==='red'))return;if(item.type==='skill'&&state.ownedSkills.includes(item.id))return;if(state.coins<item.price){toast('코인이 부족해요.');return}state.coins-=item.price;if(item.type==='skin')state.ownedSkins.push(item.skin);else if(item.type==='tile'){state.tileSkin='yellow';state.ownedSkills.push('tile_yellow')}else state.ownedSkills.push(item.id);sound(700,.08);save();renderBoard();toast(item.name+' 구매 완료!')}
+$('skinSelect').addEventListener('change',e=>{state.skin=e.target.value;save();renderBoard()});
+function toast(text){const el=$('gameMessage');if(el){el.textContent=text;el.className='message'} }
+function sound(freq=500,duration=.07){if(!state.sound)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type='sine';g.gain.setValueAtTime(.045,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}catch(e){}}
+function setDifficulty(id){difficulty=id;document.querySelectorAll('[data-diff]').forEach(b=>b.classList.toggle('active',b.dataset.diff===id));newGame()}
+document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>setDifficulty(b.dataset.diff)));
+$('newGame').addEventListener('click',newGame);
+function newGame(){clearInterval(timerId);timerId=null;seconds=0;finderUses=0;catchArmed=false;catchUsed=false;bonusUsed=false;flags=0;started=false;ended=false;flagMode=false;exploded=-1;board=[];const d=DIFF[difficulty];for(let i=0;i<d.rows*d.cols;i++)board.push({mine:false,open:false,flag:false,near:0});$('timer').textContent='000';$('mineCounter').textContent=String(d.mines).padStart(3,'0');$('flagCounter').textContent='000';$('digMode').classList.add('selected');$('flagMode').classList.remove('selected');$('finderLeft').textContent='';$('gameMessage').className='message';$('gameMessage').textContent='칸을 눌러 시작하세요. 첫 클릭은 안전해요.';renderBoard()}
+function placeMines(safeIndex){
+ const d=DIFF[difficulty];let count=0;
+ const protectedCells=new Set(safeIndex>=0?[safeIndex,...neighbors(safeIndex)]:[]);
+ while(count<d.mines){
+  const i=Math.floor(Math.random()*board.length);
+  if(protectedCells.has(i)||board[i].mine)continue;
+  board[i].mine=true;count++;
+ }
+ for(let i=0;i<board.length;i++){
+  if(board[i].mine)continue;
+  board[i].near=neighbors(i).filter(n=>board[n].mine).length;
+ }
+}
+function neighbors(i){const d=DIFF[difficulty],r=Math.floor(i/d.cols),c=i%d.cols,out=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const rr=r+dr,cc=c+dc;if(rr>=0&&rr<d.rows&&cc>=0&&cc<d.cols)out.push(rr*d.cols+cc)}return out}
+function startTimer(){if(timerId)return;timerId=setInterval(()=>{if(!ended){seconds=Math.min(999,seconds+1);$('timer').textContent=String(seconds).padStart(3,'0')}},1000)}
+function dig(i){
+ if(ended)return;
+ if(board[i].open){chord(i);return}
+ if(board[i].flag)return;
+ if(!started){started=true;placeMines(i);startTimer();state.games++;save()}
+ const c=board[i];
+ if(catchArmed&&state.equipped.includes('catch')&&!catchUsed){
+  catchArmed=false;catchUsed=true;
+  if(c.mine){
+   c.mine=false;c.open=true;
+   const nearest=board.map((x,j)=>({x,j,dist:Math.abs(Math.floor(j/DIFF[difficulty].cols)-Math.floor(i/DIFF[difficulty].cols))+Math.abs(j%DIFF[difficulty].cols-i%DIFF[difficulty].cols)})).filter(o=>o.x.mine&&!o.x.open).sort((a,b)=>a.dist-b.dist)[0];
+   if(nearest){nearest.x.mine=false;nearest.x.open=true}
+   recalcNumbers();sound(760,.12);toast('🧲 캐치 발동! 지뢰를 제거했어요.');
+  }else{
+   c.open=true;const target=board.find(x=>x.mine&&!x.open&&!x.flag);if(target){target.mine=false;recalcNumbers()}sound(760,.12);toast('🧲 안전 칸! 지뢰 하나를 무력화했어요.');
+  }
+ }else if(c.mine){c.open=true;exploded=i;lose();renderBoard();return}
+ openSafe(i);sound(c.near?540+c.near*65:390,.055);
+ if(board.every(x=>x.mine||x.open)){win();return}
+ renderBoard();
+}
+function chord(i){
+ if(ended)return;
+ const cell=board[i];
+ if(!cell.open||cell.mine||cell.near<1)return;
+ const around=neighbors(i);
+ const adjacentFlags=around.filter(n=>board[n].flag).length;
+ if(adjacentFlags!==cell.near)return;
+ const targets=around.filter(n=>!board[n].open&&!board[n].flag);
+ if(!targets.length)return;
+ // The game trusts flags like classic Minesweeper: an incorrect flag can expose a mine.
+ for(const n of targets){
+  if(board[n].mine){
+   board[n].open=true;exploded=n;lose();renderBoard();return;
+  }
+  openSafe(n);
+ }
+ sound(690,.07);
+ if(board.every(x=>x.mine||x.open)){win();return}
+ renderBoard();
+}
+function recalcNumbers(){for(let j=0;j<board.length;j++)board[j].near=board[j].mine?0:neighbors(j).filter(n=>board[n].mine).length}
+function openSafe(i){const stack=[i];while(stack.length){const k=stack.pop(),c=board[k];if(c.open||c.flag||c.mine)continue;c.open=true;if(c.near===0)neighbors(k).forEach(n=>{if(!board[n].open&&!board[n].flag&&!board[n].mine)stack.push(n)})}}
+function toggleFlag(i){if(ended||board[i].open)return;board[i].flag=!board[i].flag;flags+=board[i].flag?1:-1;$('flagCounter').textContent=String(Math.max(0,DIFF[difficulty].mines-flags)).padStart(3,'0');sound(board[i].flag?620:440,.05);renderBoard()}
+function win(){ended=true;clearInterval(timerId);timerId=null;state.wins++;addXP(DIFF[difficulty].reward*3+10);const base=DIFF[difficulty].reward;let bonus=0;if(state.equipped.includes('timeattack'))bonus=Math.max(0,Math.min(10,10-Math.floor(Math.max(0,seconds-15)/15)));const reward=base+bonus;state.coins+=reward;save();$('gameMessage').className='message win';$('gameMessage').textContent='🎉 클리어! '+base+' 코인'+(bonus?' + 타임어택 보너스 '+bonus+' 코인':'')+' 획득!';sound(880,.18);renderBoard()}
+function lose(){
+ if(state.equipped.includes('bonus')&&!bonusUsed&&exploded>=0){
+  bonusUsed=true;const spot=exploded;board[spot].mine=false;board[spot].open=false;board[spot].flag=true;flags++;recalcNumbers();exploded=-1;ended=false;
+  $('flagCounter').textContent=String(Math.max(0,DIFF[difficulty].mines-flags)).padStart(3,'0');$('gameMessage').className='message win';$('gameMessage').textContent='❤️ 보너스 부활! 지뢰를 무력화하고 그 자리에 깃발을 놓았어요.';sound(740,.15);save();renderBoard();return;
+ }
+ ended=true;clearInterval(timerId);timerId=null;addXP(2);save();board.forEach(c=>{if(c.mine)c.open=true});$('gameMessage').className='message lose';$('gameMessage').textContent='💥 지뢰를 밟았어요! 새 게임으로 다시 도전하세요.';sound(150,.25)
+}
+function useFinder(){if(ended)return toast('새 게임을 시작해 주세요.');if(!state.equipped.includes('finder'))return toast('상점에서 파인더를 구매하고 장착하세요.');if(finderUses>=3)return toast('이번 라운드의 파인더 사용 횟수 3회를 모두 썼어요.');if(!started){started=true;placeMines(-1);startTimer();state.games++;save()}const targets=board.map((c,i)=>({c,i})).filter(x=>x.c.mine&&!x.c.flag&&!x.c.open);if(!targets.length)return toast('찾을 지뢰가 남아 있지 않아요.');const found=targets[Math.floor(Math.random()*targets.length)];found.c.flag=true;flags++;finderUses++;$('flagCounter').textContent=String(Math.max(0,DIFF[difficulty].mines-flags)).padStart(3,'0');$('finderLeft').textContent='('+ (3-finderUses)+'회 남음)';sound(800,.1);renderBoard();toast('🔎 지뢰 위치를 찾아 깃발로 표시했어요.')}
+$('finderBtn').addEventListener('click',useFinder);
+$('catchBtn').addEventListener('click',()=>{if(!state.equipped.includes('catch'))return toast('레벨 10 보상 캐치 스킬을 장착하세요.');if(catchUsed)return toast('이번 라운드에서 이미 사용했어요.');catchArmed=!catchArmed;$('catchBtn').classList.toggle('selected',catchArmed);toast(catchArmed?'🧲 캐치 준비 완료! 다음 타일을 누르세요.':'캐치 취소')});
+$('digMode').addEventListener('click',()=>{flagMode=false;$('digMode').classList.add('selected');$('flagMode').classList.remove('selected')});
+$('flagMode').addEventListener('click',()=>{flagMode=true;$('flagMode').classList.add('selected');$('digMode').classList.remove('selected')});
+function renderBoard(){const d=DIFF[difficulty],el=$('board');el.classList.toggle('yellow-tiles',state.tileSkin==='yellow');el.classList.toggle('red-tiles',state.tileSkin==='red');el.style.gridTemplateColumns='repeat('+d.cols+',var(--cell-width, auto))';el.innerHTML='';board.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='cell';b.setAttribute('aria-label','행 '+(Math.floor(i/d.cols)+1)+', 열 '+(i%d.cols+1));if(c.open){b.classList.add('open');if(c.mine){b.classList.add('mine');b.textContent=i===exploded?'💥':'💣';if(i===exploded)b.classList.add('exploded')}else if(c.near){b.textContent=c.near;b.classList.add('n'+c.near)}}else if(c.flag){b.classList.add('flag');b.textContent=state.skin||'🚩'}b.addEventListener('click',()=>{if(board[i].open)chord(i);else if(flagMode)toggleFlag(i);else dig(i)});b.addEventListener('contextmenu',e=>{e.preventDefault();toggleFlag(i)});el.append(b)})}
+renderHeader();renderHome();renderShop();renderProfile();newGame();
+})();
+</script>
+</body>
+</html>
